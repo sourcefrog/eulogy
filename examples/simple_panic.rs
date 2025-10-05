@@ -1,5 +1,6 @@
 fn a() {
-    let _guard = eulogy::record_value("answer", 42);
+    // let _guard = eulogy::record_value("answer", 42);
+    eulogy::record!("answer", 42);
     println!("ready to panic...");
     panic!("This is a panic!");
 }

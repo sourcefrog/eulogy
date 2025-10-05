@@ -16,9 +16,11 @@ type Value = u64;
 
 /// Holds one observed value.
 #[derive(Debug)]
+#[allow(dead_code)] // the Debug is the point
 struct Frame {
     name: &'static str,
     value: Value,
+    file: &'static str,
     // TODO: Also some metadata: source position, name, etc.
 }
 
@@ -40,10 +42,10 @@ impl Drop for Guard {
 }
 
 /// Remember a value observed on the current stack frame.
-pub fn record_value(name: &'static str, value: u64) -> Guard {
+pub fn record_value(name: &'static str, value: u64, file: &'static str) -> Guard {
     println!("Record value: {}", value);
     VALUES.with(|values| match values.try_borrow_mut() {
-        Ok(mut values) => values.push(Frame { name, value }),
+        Ok(mut values) => values.push(Frame { name, value, file }),
         Err(_) => eprintln!("Failed to borrow values in record_value"),
     });
     Guard {}
@@ -65,6 +67,18 @@ pub fn install_panic_hook() {
         print_values();
         prev_hook(info);
     }));
+}
+
+#[macro_export]
+macro_rules! record {
+    ($name:expr, $value:expr) => {
+        let _guard = {
+            let name = $name;
+            let value = $value;
+            println!("Recording: {name}={value:?}");
+            $crate::record_value(name, value, file!())
+        };
+    };
 }
 
 #[cfg(test)]
